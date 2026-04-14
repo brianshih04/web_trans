@@ -1,36 +1,25 @@
 import os
 import sys
 import webview
-from datetime import datetime
+
+from api import Api
+from config import (
+    DEV_SERVER_URL,
+    setup_logging,
+    get_base_dir,
+    WINDOW_TITLE,
+    DEFAULT_WIDTH,
+    DEFAULT_HEIGHT,
+    MIN_WIDTH,
+    MIN_HEIGHT,
+)
 
 
-class Api:
-    def __init__(self):
-        self.output_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "output"
-        )
-        os.makedirs(self.output_dir, exist_ok=True)
-
-    def receive_text(self, text):
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] {text}")
-        self._append_to_file(text)
-
-    def _append_to_file(self, text):
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        filepath = os.path.join(self.output_dir, f"{date_str}.txt")
-        with open(filepath, "a", encoding="utf-8") as f:
-            f.write(text + "\n")
-
-
-DEV_SERVER_URL = "http://localhost:5173"
-
-
-def get_frontend_url():
+def get_frontend_url() -> str:
     if getattr(sys, "frozen", False):
         base_path = sys._MEIPASS
     else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = get_base_dir()
 
     dist_path = os.path.join(base_path, "frontend", "dist", "index.html")
     if os.path.exists(dist_path):
@@ -40,15 +29,18 @@ def get_frontend_url():
 
 
 if __name__ == "__main__":
+    debug = "--debug" in sys.argv
+    setup_logging(debug)
+
     api = Api()
     url = get_frontend_url()
     window = webview.create_window(
-        "即時語音轉文字",
+        WINDOW_TITLE,
         url,
         js_api=api,
-        width=900,
-        height=700,
+        width=DEFAULT_WIDTH,
+        height=DEFAULT_HEIGHT,
         resizable=True,
-        min_size=(600, 500),
+        min_size=(MIN_WIDTH, MIN_HEIGHT),
     )
-    webview.start(debug="--debug" in sys.argv)
+    webview.start(debug=debug)
